@@ -8,7 +8,7 @@ const openrouterEmbeddingUsageSchema = z.object({
 
 const openrouterEmbeddingDataSchema = z.object({
   object: z.literal('embedding'),
-  embedding: z.array(z.number()),
+  embedding: z.array(z.coerce.number()),
   index: z.number().optional(),
 });
 

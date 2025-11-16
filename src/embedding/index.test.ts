@@ -249,5 +249,60 @@ describe('OpenRouterEmbeddingModel', () => {
       expect(result.usage).toBeUndefined();
       expect(result.providerMetadata).toBeUndefined();
     });
+
+    it('should handle embedding values as strings and convert to numbers', async () => {
+      const mockFetchStringValues = async (
+        _url: URL | RequestInfo,
+        _init?: RequestInit,
+      ): Promise<Response> => {
+        return new Response(
+          JSON.stringify({
+            object: 'list',
+            data: [
+              {
+                object: 'embedding',
+                // API might return strings instead of numbers
+                embedding: ['0.0037854325', '0.0070240805', '-0.051509924'],
+                index: 0,
+              },
+            ],
+            model: 'openai/text-embedding-3-small',
+            usage: {
+              prompt_tokens: 5,
+              total_tokens: 5,
+            },
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+            },
+          },
+        );
+      };
+
+      const provider = createOpenRouter({
+        apiKey: 'test-key',
+        fetch: mockFetchStringValues,
+      });
+      const model = provider.textEmbeddingModel(
+        'openai/text-embedding-3-small',
+      );
+
+      const result = await model.doEmbed({
+        values: ['sunny day at the beach'],
+      });
+
+      expect(result.embeddings).toHaveLength(1);
+      expect(result.embeddings[0]).toHaveLength(3);
+      // Verify that values are numbers, not strings
+      expect(typeof result.embeddings[0]![0]).toBe('number');
+      expect(typeof result.embeddings[0]![1]).toBe('number');
+      expect(typeof result.embeddings[0]![2]).toBe('number');
+      // Verify actual values are correctly parsed
+      expect(result.embeddings[0]![0]).toBeCloseTo(0.0037854325);
+      expect(result.embeddings[0]![1]).toBeCloseTo(0.0070240805);
+      expect(result.embeddings[0]![2]).toBeCloseTo(-0.051509924);
+    });
   });
 });
