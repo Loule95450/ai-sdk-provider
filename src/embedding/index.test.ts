@@ -304,5 +304,64 @@ describe('OpenRouterEmbeddingModel', () => {
       expect(result.embeddings[0]![1]).toBeCloseTo(0.0070240805);
       expect(result.embeddings[0]![2]).toBeCloseTo(-0.051509924);
     });
+
+    it('should handle embedding values as object with numeric keys and convert to array', async () => {
+      const mockFetchObjectValues = async (
+        _url: URL | RequestInfo,
+        _init?: RequestInit,
+      ): Promise<Response> => {
+        return new Response(
+          JSON.stringify({
+            object: 'list',
+            data: [
+              {
+                object: 'embedding',
+                // API might return an object with numeric keys instead of array
+                embedding: {
+                  '0': '0.0037854325',
+                  '1': '0.0070240805',
+                  '2': '-0.051509924',
+                },
+                index: 0,
+              },
+            ],
+            model: 'openai/text-embedding-3-small',
+            usage: {
+              prompt_tokens: 5,
+              total_tokens: 5,
+            },
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+            },
+          },
+        );
+      };
+
+      const provider = createOpenRouter({
+        apiKey: 'test-key',
+        fetch: mockFetchObjectValues,
+      });
+      const model = provider.textEmbeddingModel(
+        'openai/text-embedding-3-small',
+      );
+
+      const result = await model.doEmbed({
+        values: ['sunny day at the beach'],
+      });
+
+      expect(result.embeddings).toHaveLength(1);
+      expect(result.embeddings[0]).toHaveLength(3);
+      // Verify that values are numbers, not strings
+      expect(typeof result.embeddings[0]![0]).toBe('number');
+      expect(typeof result.embeddings[0]![1]).toBe('number');
+      expect(typeof result.embeddings[0]![2]).toBe('number');
+      // Verify actual values are correctly parsed
+      expect(result.embeddings[0]![0]).toBeCloseTo(0.0037854325);
+      expect(result.embeddings[0]![1]).toBeCloseTo(0.0070240805);
+      expect(result.embeddings[0]![2]).toBeCloseTo(-0.051509924);
+    });
   });
 });
