@@ -4,7 +4,7 @@ The [OpenRouter](https://openrouter.ai/) provider for the [Vercel AI SDK](https:
 
 ## AI SDK v6 Beta Support
 
-This provider now supports both AI SDK v5 and AI SDK v6 beta with Provider V3 specification. See [PROVIDER_V3_SUPPORT.md](./PROVIDER_V3_SUPPORT.md) for detailed information about Provider V3 support and migration guide.
+This provider now supports both AI SDK v5 and AI SDK v6 beta with Provider V3 specification.
 
 ## Setup for AI SDK v6 Beta
 

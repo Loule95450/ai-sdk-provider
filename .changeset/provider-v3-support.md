@@ -22,7 +22,6 @@ This release adds support for the new Provider V3 specification introduced in AI
 **Migration:**
 - For AI SDK v6 beta users: No changes needed, upgrade to `ai@beta` and use as normal
 - For AI SDK v5 users: Use the deprecated `OpenRouter` class or explicit V2 model classes
-- See PROVIDER_V3_SUPPORT.md for detailed migration guide
 
 **Technical Details:**
 - V3 models are implemented as wrappers around V2 models for code reuse
