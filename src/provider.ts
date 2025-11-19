@@ -9,16 +9,20 @@ import type {
 } from './types/openrouter-completion-settings';
 
 import { loadApiKey, withoutTrailingSlash } from '@ai-sdk/provider-utils';
-import {
+import { OpenRouterChatLanguageModelV3 } from './chat';
+import { OpenRouterCompletionLanguageModelV3 } from './completion';
+import { withUserAgentSuffix } from './utils/with-user-agent-suffix';
+import { VERSION } from './version';
+
+// Re-export V2 and V3 models for direct use
+export {
   OpenRouterChatLanguageModel,
   OpenRouterChatLanguageModelV3,
 } from './chat';
-import {
+export {
   OpenRouterCompletionLanguageModel,
   OpenRouterCompletionLanguageModelV3,
 } from './completion';
-import { withUserAgentSuffix } from './utils/with-user-agent-suffix';
-import { VERSION } from './version';
 
 export type { OpenRouterCompletionSettings };
 
@@ -177,14 +181,19 @@ export function createOpenRouter(
 
   // Support both V2 and V3 by providing both sets of methods
   provider.specificationVersion = 'v3' as const;
+  // biome-ignore lint/suspicious/noExplicitAny: Type compatibility between function signatures
   provider.languageModel = createLanguageModelV3 as any;
+  // biome-ignore lint/suspicious/noExplicitAny: Type compatibility between function signatures
   provider.chat = createChatModelV3 as any;
+  // biome-ignore lint/suspicious/noExplicitAny: Type compatibility between function signatures
   provider.completion = createCompletionModelV3 as any;
   provider.textEmbeddingModel = ((_modelId: string) => {
     throw new Error('Text embedding models are not supported by OpenRouter');
+    // biome-ignore lint/suspicious/noExplicitAny: Type compatibility between function signatures
   }) as any;
   provider.imageModel = ((_modelId: string) => {
     throw new Error('Image models are not yet supported by OpenRouter');
+    // biome-ignore lint/suspicious/noExplicitAny: Type compatibility between function signatures
   }) as any;
 
   return provider as OpenRouterProvider;
