@@ -1,4 +1,4 @@
-import type { ProviderV2 } from '@ai-sdk/provider';
+import type { ProviderV3 } from '@ai-sdk/provider';
 import type {
   OpenRouterChatModelId,
   OpenRouterChatSettings,
@@ -9,31 +9,37 @@ import type {
 } from './types/openrouter-completion-settings';
 
 import { loadApiKey, withoutTrailingSlash } from '@ai-sdk/provider-utils';
-import { OpenRouterChatLanguageModel } from './chat';
-import { OpenRouterCompletionLanguageModel } from './completion';
+import {
+  OpenRouterChatLanguageModel,
+  OpenRouterChatLanguageModelV3,
+} from './chat';
+import {
+  OpenRouterCompletionLanguageModel,
+  OpenRouterCompletionLanguageModelV3,
+} from './completion';
 import { withUserAgentSuffix } from './utils/with-user-agent-suffix';
 import { VERSION } from './version';
 
 export type { OpenRouterCompletionSettings };
 
-export interface OpenRouterProvider extends ProviderV2 {
+export interface OpenRouterProvider extends ProviderV3 {
   (
     modelId: OpenRouterChatModelId,
     settings?: OpenRouterCompletionSettings,
-  ): OpenRouterCompletionLanguageModel;
+  ): OpenRouterCompletionLanguageModelV3;
   (
     modelId: OpenRouterChatModelId,
     settings?: OpenRouterChatSettings,
-  ): OpenRouterChatLanguageModel;
+  ): OpenRouterChatLanguageModelV3;
 
   languageModel(
     modelId: OpenRouterChatModelId,
     settings?: OpenRouterCompletionSettings,
-  ): OpenRouterCompletionLanguageModel;
+  ): OpenRouterCompletionLanguageModelV3;
   languageModel(
     modelId: OpenRouterChatModelId,
     settings?: OpenRouterChatSettings,
-  ): OpenRouterChatLanguageModel;
+  ): OpenRouterChatLanguageModelV3;
 
   /**
 Creates an OpenRouter chat model for text generation.
@@ -41,7 +47,7 @@ Creates an OpenRouter chat model for text generation.
   chat(
     modelId: OpenRouterChatModelId,
     settings?: OpenRouterChatSettings,
-  ): OpenRouterChatLanguageModel;
+  ): OpenRouterChatLanguageModelV3;
 
   /**
 Creates an OpenRouter completion model for text generation.
@@ -49,7 +55,7 @@ Creates an OpenRouter completion model for text generation.
   completion(
     modelId: OpenRouterCompletionModelId,
     settings?: OpenRouterCompletionSettings,
-  ): OpenRouterCompletionLanguageModel;
+  ): OpenRouterCompletionLanguageModelV3;
 }
 
 export interface OpenRouterProviderSettings {
@@ -118,11 +124,11 @@ export function createOpenRouter(
       `ai-sdk/openrouter/${VERSION}`,
     );
 
-  const createChatModel = (
+  const createChatModelV3 = (
     modelId: OpenRouterChatModelId,
     settings: OpenRouterChatSettings = {},
   ) =>
-    new OpenRouterChatLanguageModel(modelId, settings, {
+    new OpenRouterChatLanguageModelV3(modelId, settings, {
       provider: 'openrouter.chat',
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
@@ -131,11 +137,11 @@ export function createOpenRouter(
       extraBody: options.extraBody,
     });
 
-  const createCompletionModel = (
+  const createCompletionModelV3 = (
     modelId: OpenRouterCompletionModelId,
     settings: OpenRouterCompletionSettings = {},
   ) =>
-    new OpenRouterCompletionLanguageModel(modelId, settings, {
+    new OpenRouterCompletionLanguageModelV3(modelId, settings, {
       provider: 'openrouter.completion',
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
@@ -144,7 +150,7 @@ export function createOpenRouter(
       extraBody: options.extraBody,
     });
 
-  const createLanguageModel = (
+  const createLanguageModelV3 = (
     modelId: OpenRouterChatModelId | OpenRouterCompletionModelId,
     settings?: OpenRouterChatSettings | OpenRouterCompletionSettings,
   ) => {
@@ -155,23 +161,31 @@ export function createOpenRouter(
     }
 
     if (modelId === 'openai/gpt-3.5-turbo-instruct') {
-      return createCompletionModel(
+      return createCompletionModelV3(
         modelId,
         settings as OpenRouterCompletionSettings,
       );
     }
 
-    return createChatModel(modelId, settings as OpenRouterChatSettings);
+    return createChatModelV3(modelId, settings as OpenRouterChatSettings);
   };
 
   const provider = (
     modelId: OpenRouterChatModelId | OpenRouterCompletionModelId,
     settings?: OpenRouterChatSettings | OpenRouterCompletionSettings,
-  ) => createLanguageModel(modelId, settings);
+  ) => createLanguageModelV3(modelId, settings);
 
-  provider.languageModel = createLanguageModel;
-  provider.chat = createChatModel;
-  provider.completion = createCompletionModel;
+  // Support both V2 and V3 by providing both sets of methods
+  provider.specificationVersion = 'v3' as const;
+  provider.languageModel = createLanguageModelV3 as any;
+  provider.chat = createChatModelV3 as any;
+  provider.completion = createCompletionModelV3 as any;
+  provider.textEmbeddingModel = ((_modelId: string) => {
+    throw new Error('Text embedding models are not supported by OpenRouter');
+  }) as any;
+  provider.imageModel = ((_modelId: string) => {
+    throw new Error('Image models are not yet supported by OpenRouter');
+  }) as any;
 
   return provider as OpenRouterProvider;
 }
