@@ -3,7 +3,7 @@ import type { ModelMessage } from 'ai';
 import { createTestServer } from '@ai-sdk/provider-utils/test';
 import { streamText } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
-import { createOpenRouter } from '../provider';
+import { OpenRouter } from '../facade';
 
 // Add type assertions for the mocked classes
 const TEST_MESSAGES: ModelMessage[] = [
@@ -25,10 +25,10 @@ describe('providerOptions', () => {
   });
 
   it('should set providerOptions openrouter to extra body', async () => {
-    const openrouter = createOpenRouter({
+    const openrouter = new OpenRouter({
       apiKey: 'test',
     });
-    const model = openrouter('anthropic/claude-3.7-sonnet');
+    const model = openrouter.chat('anthropic/claude-3.7-sonnet');
 
     await streamText({
       model: model,
@@ -54,6 +54,9 @@ describe('providerOptions', () => {
       },
       model: 'anthropic/claude-3.7-sonnet',
       stream: true,
+      stream_options: {
+        include_usage: true,
+      },
     });
   });
 });
