@@ -8,6 +8,8 @@ import type {
   LanguageModelV2ResponseMetadata,
   LanguageModelV2StreamPart,
   LanguageModelV2Usage,
+  LanguageModelV3,
+  LanguageModelV3CallOptions,
   SharedV2Headers,
   SharedV2ProviderMetadata,
 } from '@ai-sdk/provider';
@@ -1006,5 +1008,50 @@ export class OpenRouterChatLanguageModel implements LanguageModelV2 {
       request: { body: args },
       response: { headers: responseHeaders },
     };
+  }
+}
+
+export class OpenRouterChatLanguageModelV3 implements LanguageModelV3 {
+  readonly specificationVersion = 'v3' as const;
+  readonly provider = 'openrouter';
+  readonly defaultObjectGenerationMode = 'tool' as const;
+
+  readonly modelId: OpenRouterChatModelId;
+  readonly supportedUrls: Record<string, RegExp[]> = {
+    'image/*': [
+      /^data:image\/[a-zA-Z]+;base64,/,
+      /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i,
+    ],
+    // 'text/*': [/^data:text\//, /^https?:\/\/.+$/],
+    'application/*': [/^data:application\//, /^https?:\/\/.+$/],
+  };
+  readonly settings: OpenRouterChatSettings;
+
+  private readonly v2Model: OpenRouterChatLanguageModel;
+
+  constructor(
+    modelId: OpenRouterChatModelId,
+    settings: OpenRouterChatSettings,
+    config: OpenRouterChatConfig,
+  ) {
+    this.modelId = modelId;
+    this.settings = settings;
+    this.v2Model = new OpenRouterChatLanguageModel(modelId, settings, config);
+  }
+
+  async doGenerate(
+    options: LanguageModelV3CallOptions,
+  ): Promise<Awaited<ReturnType<LanguageModelV3['doGenerate']>>> {
+    return this.v2Model.doGenerate(
+      options as unknown as LanguageModelV2CallOptions,
+    ) as Promise<Awaited<ReturnType<LanguageModelV3['doGenerate']>>>;
+  }
+
+  async doStream(
+    options: LanguageModelV3CallOptions,
+  ): Promise<Awaited<ReturnType<LanguageModelV3['doStream']>>> {
+    return this.v2Model.doStream(
+      options as unknown as LanguageModelV2CallOptions,
+    ) as Promise<Awaited<ReturnType<LanguageModelV3['doStream']>>>;
   }
 }
